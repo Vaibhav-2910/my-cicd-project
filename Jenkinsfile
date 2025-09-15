@@ -60,7 +60,7 @@ spec:
                 // 'docker' container ko istemal karne ke liye
                 container('docker') {
                     script {
-                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                        withCredentials([usernamePassword(credentialsId: 'vaibhavsingh2910', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                             sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                             
                             def backendImage = "${env.DOCKER_HUB_USERNAME}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
