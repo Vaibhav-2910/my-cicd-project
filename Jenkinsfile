@@ -1,12 +1,15 @@
 
-// Jenkinsfile (for Docker on Host)
+// final-cicd-project/Jenkinsfile
+
 pipeline {
     agent any
 
     environment {
+        // --- APNI DETAILS YAHAN DAALEIN ---
         DOCKER_HUB_USERNAME  = 'vaibhavsingh2910'     // <-- APNA USERNAME YAHAN DAALEIN
         BACKEND_IMAGE_NAME   = 'my-cool-app'  // <-- APNI BACKEND REPO KA NAAM YAHAN DAALEIN
         FRONTEND_IMAGE_NAME  = 'my-frontend-app' // <-- APNI FRONTEND REPO KA NAAM YAHAN DAALEIN
+
     }
 
     stages {
@@ -17,19 +20,19 @@ pipeline {
             }
         }
 
-        stage('Build & Push Images with Docker') {
+        stage('Build & Push Images with Podman') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                        sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                        sh "podman login docker.io -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                         
                         def backendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                        sh "docker build -t ${backendImage} ./backend"
-                        sh "docker push ${backendImage}"
+                        sh "podman build -t ${backendImage} ./backend"
+                        sh "podman push ${backendImage}"
                         
                         def frontendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                        sh "docker build -t ${frontendImage} ./frontend"
-                        sh "docker push ${frontendImage}"
+                        sh "podman build -t ${frontendImage} ./frontend"
+                        sh "podman push ${frontendImage}"
                     }
                 }
             }
@@ -54,7 +57,7 @@ pipeline {
     post {
         always {
             echo 'Pipeline finished.'
-            sh 'docker logout'
+            sh 'podman logout docker.io'
         }
     }
 }
