@@ -7,6 +7,7 @@ RUN npm install
 COPY . .
 RUN npm run build -- --configuration production
 
+RUN ls -la /app/dist
 # Stage 2: Serve the app from Nginx
 FROM nginx:alpine
 COPY --from=builder /app/dist/frontend /usr/share/nginx/html
