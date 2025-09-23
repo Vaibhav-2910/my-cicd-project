@@ -1,0 +1,53 @@
+// frontend/Jenkinsfile
+
+pipeline {
+    agent any
+
+    environment {
+        // --- APNI DETAILS YAHAN DAALEIN ---
+        DOCKER_HUB_USERNAME = 'vaibhavsingh2910'
+        FRONTEND_IMAGE_NAME = 'my-frontend-app'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build & Push Frontend Image') {
+            steps {
+                script {
+                    // Frontend directory ke andar kaam karein
+                    dir('frontend') {
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                            
+                            def frontendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                            sh "docker build -t ${frontendImage} ."
+                            sh "docker push ${frontendImage}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Frontend to Minikube') {
+            steps {
+                script {
+                    def frontendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                    sh "kubectl set image deployment/frontend-deployment frontend-app=${frontendImage}"
+                    sh "kubectl rollout status deployment/frontend-deployment"
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'Frontend pipeline finished.'
+            sh 'docker logout'
+        }
+    }
+}

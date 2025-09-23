@@ -1,0 +1,54 @@
+// backend/Jenkinsfile
+
+pipeline {
+    agent any
+
+    environment {
+        // --- APNI DETAILS YAHAN DAALEIN ---
+        DOCKER_HUB_USERNAME = 'vaibhavsingh2910'
+        BACKEND_IMAGE_NAME  = 'my-cool-app'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Poora project checkout karein
+                checkout scm
+            }
+        }
+
+        stage('Build & Push Backend Image') {
+            steps {
+                script {
+                    // Backend directory ke andar kaam karein
+                    dir('backend') {
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                            
+                            def backendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                            sh "docker build -t ${backendImage} ."
+                            sh "docker push ${backendImage}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Backend to Minikube') {
+            steps {
+                script {
+                    def backendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                    sh "kubectl set image deployment/backend-deployment backend-app=${backendImage}"
+                    sh "kubectl rollout status deployment/backend-deployment"
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'Backend pipeline finished.'
+            sh 'docker logout'
+        }
+    }
+}
