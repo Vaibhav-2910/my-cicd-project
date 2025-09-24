@@ -1,4 +1,4 @@
-// backend/Jenkinsfile
+// frontend/Jenkinsfile
 
 pipeline {
     agent any
@@ -6,40 +6,39 @@ pipeline {
     environment {
         // --- APNI DETAILS YAHAN DAALEIN ---
         DOCKER_HUB_USERNAME = 'vaibhavsingh2910'
-        BACKEND_IMAGE_NAME  = 'my-cool-app'
+        FRONTEND_IMAGE_NAME = 'my-frontend-app'
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // Poora project checkout karein
                 checkout scm
             }
         }
 
-        stage('Build & Push Backend Image') {
+        stage('Build & Push Frontend Image') {
             steps {
                 script {
-                    // Backend directory ke andar kaam karein
-                    dir('backend') {
+                    // Frontend directory ke andar kaam karein
+                    dir('frontend') {
                         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                             sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                             
-                            def backendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                            sh "docker build -t ${backendImage} ."
-                            sh "docker push ${backendImage}"
+                            def frontendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                            sh "docker build -t ${frontendImage} ."
+                            sh "docker push ${frontendImage}"
                         }
                     }
                 }
             }
         }
 
-        stage('Deploy Backend to Minikube') {
+        stage('Deploy Frontend to Minikube') {
             steps {
                 script {
-                    def backendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                    sh "kubectl set image deployment/backend-deployment backend-app=${backendImage}"
-                    sh "kubectl rollout status deployment/backend-deployment"
+                    def frontendImage = "docker.io/${env.DOCKER_HUB_USERNAME}/${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                    sh "kubectl set image deployment/frontend-deployment frontend-app=${frontendImage}"
+                    sh "kubectl rollout status deployment/frontend-deployment"
                 }
             }
         }
@@ -47,7 +46,7 @@ pipeline {
     
     post {
         always {
-            echo 'Backend pipeline finished.'
+            echo 'Frontend pipeline finished.'
             sh 'docker logout'
         }
     }
